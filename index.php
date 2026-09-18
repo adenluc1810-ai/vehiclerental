@@ -33,7 +33,7 @@ require_once __DIR__ . '/includes/header.php';
 <?php endif; ?>
 <?php foreach ($vehicles as $v): ?>
     <div class="vehicle-card">
-        <img src="<?php echo $v['image'] ? BASE_URL . 'uploads/vehicles/' . e($v['image']) : 'https://via.placeholder.com/300x170?text=' . urlencode($v['brand']); ?>" alt="">
+        <img src="<?php echo e(vehicleImageUrl($v['image'], $v['brand'] . ' ' . $v['model'])); ?>" alt="">
         <div class="body">
             <h3><?php echo e($v['brand'] . ' ' . $v['model']); ?></h3>
             <span class="tag"><?php echo e($v['category']); ?></span>

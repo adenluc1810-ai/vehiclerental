@@ -13,8 +13,13 @@ $stmt->execute([$bookingId]);
 if ($stmt->fetch()) { flash('info', 'This booking has already been paid.'); redirect('booking/my_bookings.php'); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pay'])) {
+    if (!csrfCheck()) {
+        flash('error', 'Your session expired. Please try the payment again.');
+        redirect('payment/checkout.php?booking_id=' . $bookingId);
+    }
     // Simulated payment gateway processing
-    $method = $_POST['method'];
+    $allowed = ['Card','UPI','NetBanking','Cash','Wallet'];
+    $method  = in_array($_POST['method'] ?? '', $allowed, true) ? $_POST['method'] : 'Card';
     $txnId = 'TXN' . strtoupper(uniqid());
 
     $stmt = $pdo->prepare("INSERT INTO payments (booking_id, amount, method, transaction_id, status) VALUES (?,?,?,?, 'success')");
@@ -25,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pay'])) {
     notify($_SESSION['user_id'], 'Payment Successful', "Payment of " . money($b['total_amount']) . " received for booking #$bookingId. Txn: $txnId");
 
     flash('success', 'Payment successful! Your booking is confirmed.');
-    redirect('booking/my_bookings.php');
+    redirect('booking/receipt.php?booking_id=' . $bookingId . '&new=1');
 }
 
 $pageTitle = 'Checkout';
@@ -37,6 +42,7 @@ require_once __DIR__ . '/../includes/header.php';
     <p><strong>Duration:</strong> <?php echo e($b['duration_days']); ?> day(s)</p>
     <p class="price">Amount to pay: <?php echo money($b['total_amount']); ?></p>
     <form method="post">
+        <?php echo csrfField(); ?>
         <input type="hidden" name="booking_id" value="<?php echo $bookingId; ?>">
         <div class="form-group">
             <label>Payment Method</label>

@@ -29,7 +29,7 @@ require_once __DIR__ . '/../includes/header.php';
         <h2>Invoice / Bill</h2>
         <span class="status-pill status-<?php echo $b['status']; ?>"><?php echo ucfirst($b['status']); ?></span>
     </div>
-    <p><strong>Booking #:</strong> <?php echo $b['id']; ?></p>
+    <p><strong>Booking Ref:</strong> <?php echo e(bookingRef($b['id'])); ?></p>
     <p><strong>Customer:</strong> <?php echo e($b['customer_name']); ?> (<?php echo e($b['customer_email']); ?>)</p>
     <p><strong>Vehicle:</strong> <?php echo e($b['brand'].' '.$b['model']); ?></p>
     <p><strong>Rental Period:</strong> <?php echo e($b['start_date']).' → '.e($b['end_date']); ?> (<?php echo $b['duration_days']; ?> days)</p>
@@ -55,6 +55,9 @@ require_once __DIR__ . '/../includes/header.php';
             <span class="status-pill status-pending">Unpaid</span>
         <?php endif; ?>
     </p>
-    <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    <div class="flex no-print">
+        <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        <a class="btn btn-outline" href="<?php echo BASE_URL; ?>booking/receipt.php?booking_id=<?php echo (int)$b['id']; ?>">Reservation Receipt</a>
+    </div>
 </div>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

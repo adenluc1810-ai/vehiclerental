@@ -83,3 +83,27 @@ th{background:#f0f3f9;}
 .flex{display:flex;gap:10px;align-items:center;}
 .flex-between{display:flex;justify-content:space-between;align-items:center;}
 .muted{color:#777;font-size:13px;}
+
+/* ===== Reservation receipt ===== */
+.receipt{max-width:720px;margin:0 auto 16px;}
+.receipt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid var(--primary);padding-bottom:12px;margin-bottom:16px;}
+.receipt-brand{font-size:22px;font-weight:700;color:var(--primary-dark);}
+.receipt-title{font-size:13px;letter-spacing:1.5px;color:#666;font-weight:700;}
+.receipt-ref{font-size:20px;font-weight:700;color:var(--dark);letter-spacing:1px;}
+.receipt-status{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.receipt-parties h4,.receipt h4{margin:14px 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:#555;}
+.receipt-parties p{margin:0;font-size:14px;line-height:1.6;}
+.receipt-table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px;}
+.receipt-table td,.receipt-table th{padding:8px 4px;border-bottom:1px solid var(--border);text-align:left;}
+.receipt-table td:first-child{color:#666;width:45%;}
+.receipt-table .amt{text-align:right;}
+.receipt-table .total-row th{border-top:2px solid var(--dark);border-bottom:none;font-size:16px;}
+.paid-note{background:#e3f7ec;border:1px solid #b7ecd0;color:var(--success);padding:10px 14px;border-radius:6px;font-size:14px;}
+.receipt-foot{border-top:1px dashed var(--border);padding-top:12px;margin-top:16px;}
+
+@media print{
+  .navbar,.site-footer,.no-print,.alert{display:none !important;}
+  body{background:#fff;}
+  .container{padding:0;}
+  .receipt{border:none;box-shadow:none;max-width:100%;margin:0;padding:0;}
+}

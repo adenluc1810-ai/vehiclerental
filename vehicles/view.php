@@ -25,7 +25,8 @@ $bookedRanges = $stmt->fetchAll();
 
 function isDateBooked($date, $ranges) {
     foreach ($ranges as $r) {
-        if ($date >= $r['start_date'] && $date <= $r['end_date']) return true;
+        // end_date is the drop day, so the vehicle is free again from that date
+        if ($date >= $r['start_date'] && $date < $r['end_date']) return true;
     }
     return false;
 }
@@ -35,7 +36,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 <div class="grid grid-2">
     <div>
-        <img src="<?php echo $vehicle['image'] ? BASE_URL . 'uploads/vehicles/' . e($vehicle['image']) : 'https://via.placeholder.com/500x300?text=' . urlencode($vehicle['brand']); ?>" style="width:100%;border-radius:10px;">
+        <img src="<?php echo e(vehicleImageUrl($vehicle['image'], $vehicle['brand'] . ' ' . $vehicle['model'], 500, 300)); ?>" style="width:100%;border-radius:10px;">
         <?php if ($images): ?>
         <div class="grid grid-4" style="margin-top:10px;">
             <?php foreach ($images as $img): ?>
@@ -61,20 +62,25 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="card" style="margin-top:16px;">
             <h3>Book This Vehicle</h3>
             <?php if (!isLoggedIn()): ?>
-                <p class="muted">Please <a href="../login.php">login</a> as a customer to book.</p>
+                <p class="muted">Please <a href="<?php echo BASE_URL; ?>login.php">login</a> as a customer to book.</p>
             <?php elseif ($_SESSION['role'] !== 'customer'): ?>
                 <p class="muted">Only customer accounts can make bookings.</p>
             <?php else: ?>
-                <form method="post" action="../booking/create.php">
-                    <input type="hidden" name="vehicle_id" value="<?php echo $vehicle['id']; ?>">
+                <form method="post" action="<?php echo BASE_URL; ?>booking/create.php">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="vehicle_id" value="<?php echo (int)$vehicle['id']; ?>">
                     <div class="grid grid-2">
                         <div class="form-group">
                             <label>Pickup Date</label>
-                            <input type="date" name="start_date" required value="<?php echo e($_GET['start_date'] ?? ''); ?>">
+                            <input type="date" id="start_date" name="start_date" required
+                                   min="<?php echo date('Y-m-d'); ?>"
+                                   value="<?php echo e($_GET['start_date'] ?? ''); ?>">
                         </div>
                         <div class="form-group">
                             <label>Drop Date</label>
-                            <input type="date" name="end_date" required value="<?php echo e($_GET['end_date'] ?? ''); ?>">
+                            <input type="date" id="end_date" name="end_date" required
+                                   min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
+                                   value="<?php echo e($_GET['end_date'] ?? ''); ?>">
                         </div>
                     </div>
                     <div class="grid grid-2">
@@ -87,8 +93,51 @@ require_once __DIR__ . '/../includes/header.php';
                             <input type="text" name="drop_location" value="<?php echo e($vehicle['location']); ?>" required>
                         </div>
                     </div>
-                    <button class="btn" type="submit">Reserve Now</button>
+                    <p class="muted" id="quote">Rate: <?php echo money($vehicle['price_per_day']); ?> per day. Choose your dates to see the total.</p>
+                    <button class="btn" type="submit" id="reserveBtn">Reserve Now</button>
                 </form>
+                <script>
+                (function () {
+                    var rate  = <?php echo json_encode((float)$vehicle['price_per_day']); ?>;
+                    var start = document.getElementById('start_date');
+                    var end   = document.getElementById('end_date');
+                    var quote = document.getElementById('quote');
+                    var form  = start.form;
+                    var busy  = <?php echo json_encode(array_map(function ($r) {
+                        return ['s' => $r['start_date'], 'e' => $r['end_date']];
+                    }, $bookedRanges)); ?>;
+
+                    function overlaps(s, e) {
+                        return busy.some(function (r) { return !(e <= r.s || s >= r.e); });
+                    }
+                    function update() {
+                        if (!start.value || !end.value) return;
+                        end.min = new Date(new Date(start.value).getTime() + 86400000)
+                                    .toISOString().slice(0, 10);
+                        if (end.value <= start.value) {
+                            quote.textContent = 'Drop date must be after the pickup date.';
+                            return;
+                        }
+                        if (overlaps(start.value, end.value)) {
+                            quote.textContent = 'Those dates are already booked — please pick another range.';
+                            return;
+                        }
+                        var days = Math.round(
+                            (new Date(end.value) - new Date(start.value)) / 86400000);
+                        quote.textContent = days + ' day(s) x ' + rate.toFixed(2)
+                                          + ' = ' + (days * rate).toFixed(2) + ' total';
+                    }
+                    start.addEventListener('change', update);
+                    end.addEventListener('change', update);
+                    update();
+
+                    // prevent a double click creating two reservations
+                    form.addEventListener('submit', function () {
+                        var b = document.getElementById('reserveBtn');
+                        setTimeout(function () { b.disabled = true; b.textContent = 'Reserving...'; }, 0);
+                    });
+                })();
+                </script>
             <?php endif; ?>
         </div>
         <?php endif; ?>
